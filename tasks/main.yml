@@ -1,0 +1,41 @@
+---
+- block:
+    - name: Get clickhouse distrib
+      get_url:
+        url: "https://packages.clickhouse.com/deb/pool/main/c/{{ item }}/{{ item }}_{{ clickhouse_version }}_all.deb"
+        dest: "./{{ item }}_{{ clickhouse_version }}.deb"
+        mode: '644'
+      with_items: "{{ clickhouse_packages }}"
+      tags:
+      - clickhouse
+  rescue:
+    - name: Get clickhouse distrib
+      get_url:
+        url: "https://packages.clickhouse.com/deb/pool/main/c/clickhouse-common-static/clickhouse-common-static_{{ clickhouse_version }}_amd>
+        dest: "./clickhouse-common-static_{{ clickhouse_version }}.deb"
+        mode: '644'
+      tags:
+      - clickhouse
+- name: Install clickhouse from distrib
+  become: true
+  apt:
+   deb: "{{ item }}"
+   state: present
+  with_items:
+    - clickhouse-client_{{ clickhouse_version }}.deb
+    - clickhouse-common-static_{{ clickhouse_version }}.deb
+    - clickhouse-server_{{ clickhouse_version }}.deb
+  notify: Start clickhouse service
+  tags:
+  - clickhouse
+- name: Create clickhouse config
+  become: true
+  template:
+    src: clickhouse-server.yml.j2
+    dest: /etc/clickhouse-server/config.xml
+    mode: "0644"
+  notify: Start clickhouse service
+- name: Flush handlers
+  meta: flush_handlers
+  tags:
+  - clickhouse

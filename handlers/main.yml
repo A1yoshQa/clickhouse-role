@@ -1,0 +1,6 @@
+---
+- name: Start clickhouse service
+  become: true
+  service:
+    name: clickhouse-server
+    state: restarted
